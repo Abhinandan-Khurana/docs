@@ -1,0 +1,264 @@
+---
+title: Quickstart
+description: Get from install to first search in under 5 minutes
+---
+
+## Prerequisites
+
+Before you begin, ensure you have:
+
+- Node.js 20+
+- pnpm 9+
+- A GitHub account
+- GitHub OAuth app (recommended) or Personal Access Token
+
+<Warning>
+  WebGPU-capable browser recommended for best embedding performance. Chrome, Edge, or Firefox with WebGPU enabled.
+</Warning>
+
+## Installation
+
+<Steps>
+  <Step title="Clone and Install">
+    Clone the repository and install dependencies using pnpm:
+
+    ```bash
+    git clone https://github.com/Abhinandan-Khurana/GitStarRecall.git
+    cd GitStarRecall
+    pnpm install
+    ```
+  </Step>
+
+  <Step title="Configure Environment">
+    Copy the example environment file and configure your GitHub OAuth credentials:
+
+    ```bash
+    cp .env.example .env
+    ```
+
+    Edit `.env` and set the required OAuth variables:
+
+    <CodeGroup>
+    ```bash Local Development
+    # GitHub OAuth app client ID
+    VITE_GITHUB_CLIENT_ID=your_client_id_here
+    GITHUB_OAUTH_CLIENT_ID=your_client_id_here
+    GITHUB_OAUTH_CLIENT_SECRET=your_client_secret_here
+
+    # Callback URL (must match GitHub OAuth app settings)
+    VITE_GITHUB_REDIRECT_URI=http://localhost:5173/auth/callback
+    GITHUB_OAUTH_REDIRECT_URI=http://localhost:5173/auth/callback
+
+    # OAuth exchange endpoint
+    VITE_GITHUB_OAUTH_EXCHANGE_URL=/api/github/oauth/exchange
+    ```
+
+    ```bash Production
+    # GitHub OAuth app client ID
+    VITE_GITHUB_CLIENT_ID=your_client_id_here
+    GITHUB_OAUTH_CLIENT_ID=your_client_id_here
+    GITHUB_OAUTH_CLIENT_SECRET=your_client_secret_here
+
+    # Callback URL (must match GitHub OAuth app settings)
+    VITE_GITHUB_REDIRECT_URI=https://your-domain.com/auth/callback
+    GITHUB_OAUTH_REDIRECT_URI=https://your-domain.com/auth/callback
+
+    # OAuth exchange endpoint
+    VITE_GITHUB_OAUTH_EXCHANGE_URL=/api/github/oauth/exchange
+    ```
+    </CodeGroup>
+
+    <Note>
+      Don't have a GitHub OAuth app yet? See the [Authentication guide](/authentication) for setup instructions.
+    </Note>
+  </Step>
+
+  <Step title="Start Development Server">
+    Run the development server:
+
+    ```bash
+    pnpm dev
+    ```
+
+    Open [http://localhost:5173](http://localhost:5173) in your browser.
+  </Step>
+
+  <Step title="Authenticate with GitHub">
+    Click **Connect GitHub** on the landing page to start the OAuth flow. You'll be redirected to GitHub to authorize the app.
+
+    <Info>
+      The app requests `read:user` and `repo` scopes to access your starred repositories, including private stars.
+    </Info>
+
+    After authorization, you'll be redirected back to the app.
+  </Step>
+
+  <Step title="Fetch Your Stars">
+    Click the **Fetch Stars** button to sync your starred repositories. This will:
+
+    - Pull all your starred repos (with pagination)
+    - Fetch README content for each repo
+    - Generate embeddings locally using browser workers
+    - Store everything in local SQLite database
+
+    <Warning>
+      For large libraries (500+ stars), initial indexing may take several minutes. Progress is shown in the UI with real-time telemetry.
+    </Warning>
+  </Step>
+
+  <Step title="Search Your Stars">
+    Once indexing completes, use the search box to query in natural language:
+
+    ```text
+    Show me React component libraries with good TypeScript support
+    ```
+
+    Results are retrieved from your local vector index - no API calls required.
+  </Step>
+
+  <Step title="Get AI Recommendations (Optional)">
+    Click on a search result to open a chat session. You can:
+
+    - Ask follow-up questions
+    - Request tailored recommendations
+    - Refine results with natural language filters
+
+    <Note>
+      By default, chat uses local search only. Enable LLM providers in settings to generate AI-powered answers.
+    </Note>
+  </Step>
+</Steps>
+
+## Optional: Enable Advanced Features
+
+### Browser WebLLM (Fully Local AI)
+
+Enable fully local LLM inference in your browser:
+
+```bash .env
+VITE_WEBLLM_ENABLED=1
+```
+
+On first use, the app will ask for consent to download a model (360MB-1.5GB depending on device capabilities).
+
+### Ollama Local Embeddings
+
+For faster embedding generation, use Ollama:
+
+<Steps>
+  <Step title="Install and Start Ollama">
+    ```bash
+    # Expose Ollama to browser CORS
+    export OLLAMA_ORIGINS="*"
+    ollama serve
+    ```
+  </Step>
+  <Step title="Pull Embedding Model">
+    ```bash
+    ollama pull nomic-embed-text
+    ```
+  </Step>
+  <Step title="Configure Environment">
+    ```bash .env
+    VITE_OLLAMA_BASE_URL=http://localhost:11434
+    VITE_OLLAMA_MODEL=nomic-embed-text
+    ```
+  </Step>
+  <Step title="Enable in App">
+    In the app settings, enable **Use Ollama for local embeddings** and test the connection.
+  </Step>
+</Steps>
+
+## Performance Tuning for Large Libraries
+
+If you have 500+ starred repos, optimize embedding performance:
+
+```bash .env
+# Enable large library mode
+VITE_EMBEDDING_LARGE_LIBRARY_MODE=1
+VITE_EMBEDDING_LARGE_LIBRARY_THRESHOLD=500
+
+# Enable batched README pipeline
+VITE_README_BATCH_PIPELINE_V2=1
+
+# Tune worker pool for your machine
+VITE_EMBEDDING_POOL_SIZE=1
+VITE_EMBEDDING_WORKER_BATCH_SIZE=12
+```
+
+<Info>
+  The app exposes indexing telemetry in the UI showing throughput, backend selection, and checkpoint behavior.
+</Info>
+
+## Production Deployment
+
+### Vercel Deployment
+
+Set environment variables in Vercel dashboard:
+
+```bash
+VITE_GITHUB_CLIENT_ID=your_client_id
+VITE_GITHUB_REDIRECT_URI=https://your-domain.com/auth/callback
+VITE_GITHUB_OAUTH_EXCHANGE_URL=/api/github/oauth/exchange
+
+GITHUB_OAUTH_CLIENT_ID=your_client_id
+GITHUB_OAUTH_CLIENT_SECRET=your_client_secret
+GITHUB_OAUTH_REDIRECT_URI=https://your-domain.com/auth/callback
+```
+
+<Note>
+  The included `vercel.json` handles SPA routing automatically. `/auth/callback` and `/app` routes will work correctly.
+</Note>
+
+### Build and Preview
+
+```bash
+pnpm build
+pnpm preview
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication Setup" icon="key" href="/authentication">
+    Detailed OAuth app setup and PAT fallback configuration
+  </Card>
+  <Card title="Core Features" icon="book" href="/features/semantic-search">
+    Learn about semantic search, chat sessions, and LLM modes
+  </Card>
+  <Card title="Architecture" icon="diagram-project" href="/advanced/architecture">
+    Understand the local-first architecture and security model
+  </Card>
+  <Card title="Troubleshooting" icon="wrench" href="/advanced/troubleshooting">
+    Common issues and solutions
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="OAuth callback returns 404">
+    - Verify callback URL in GitHub OAuth app matches `VITE_GITHUB_REDIRECT_URI` exactly
+    - Check that `GITHUB_OAUTH_REDIRECT_URI` matches on server side
+    - Ensure production has SPA fallback routing configured
+  </Accordion>
+
+  <Accordion title="Embedding is very slow">
+    - Check if WebGPU is available in your browser (check console)
+    - Reduce worker pool size: `VITE_EMBEDDING_POOL_SIZE=1`
+    - Lower batch size: `VITE_EMBEDDING_WORKER_BATCH_SIZE=8`
+    - Consider Ollama for faster embedding generation
+  </Accordion>
+
+  <Accordion title="localStorage quota exceeded">
+    - App will fallback to memory-only mode for that session
+    - Click `Delete local data` in settings, then re-index incrementally
+    - Enable `VITE_README_BATCH_PIPELINE_V2=1` for better memory usage
+  </Accordion>
+
+  <Accordion title="PAT authentication fails with 401">
+    - Use raw token only (no `Bearer` prefix)
+    - Verify token has `read:user` and `repo` scopes
+    - Check token hasn't expired
+  </Accordion>
+</AccordionGroup>
